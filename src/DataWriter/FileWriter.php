@@ -53,7 +53,7 @@ class FileWriter
      */
     public function write(string $key, $value, string $path = '', string $fileExtension = '.php'): bool
     {
-        [$item, $file] = $this->getPath($key, $path, $fileExtension);
+        [$item, $file] = $this->splitFileFromItem($key, $path, $fileExtension);
 
         if (!$file) return false;
 
@@ -63,7 +63,7 @@ class FileWriter
         return !($this->files->put($file, $contents) === false);
     }
 
-    private function getPath(string $item, string $filename, string $ext = '.php'): array
+    private function splitFileFromItem(string $item, string $filename, string $ext = '.php'): array
     {
 
         $file = "{$this->defaultPath}/{$filename}{$ext}";
@@ -74,7 +74,7 @@ class FileWriter
 
         if($this->files->isDirectory("{$this->defaultPath}/{$filename}")){
             list($newFilename, $newItem) = $this->parseKey($item);
-            return $this->getPath($newItem, $filename . '/' . $newFilename, $ext);
+            return $this->splitFileFromItem($newItem, $filename . '/' . $newFilename, $ext);
         }
 
         throw new FileNotFoundException('Config file does not exists!');
