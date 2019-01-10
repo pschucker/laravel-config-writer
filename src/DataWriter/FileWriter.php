@@ -2,6 +2,7 @@
 
 namespace October\Rain\Config\DataWriter;
 
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Filesystem\Filesystem;
 use October\Rain\Config\DataWriter\Rewrite;
 
@@ -50,27 +51,33 @@ class FileWriter
      * @param  string $filename
      * @return bool
      */
-    public function write(string $item, $value, string $filename, string $fileExtension = '.php'): bool
+    public function write(string $key, $value, string $path = '', string $fileExtension = '.php'): bool
     {
-        $path = $this->getPath($item, $filename, $fileExtension);
+        [$item, $file] = $this->getPath($key, $path, $fileExtension);
 
-        if (!$path) return false;
+        if (!$file) return false;
 
-        $contents = $this->files->get($path);
+        $contents = $this->files->get($file);
         $contents = $this->rewriter->toContent($contents, [$item => $value]);
 
-        return !($this->files->put($path, $contents) === false);
+        return !($this->files->put($file, $contents) === false);
     }
 
-    private function getPath(string $item, string $filename, string $ext = '.php'): string
+    private function getPath(string $item, string $filename, string $ext = '.php'): array
     {
+
         $file = "{$this->defaultPath}/{$filename}{$ext}";
 
         if ($this->files->exists($file) && $this->hasKey($file, $item)) {
-            return $file;
+            return [$item, $file];
         }
 
-        return null;
+        if($this->files->isDirectory("{$this->defaultPath}/{$filename}")){
+            list($newFilename, $newItem) = $this->parseKey($item);
+            return $this->getPath($newItem, $filename . '/' . $newFilename, $ext);
+        }
+
+        throw new FileNotFoundException('Config file does not exists!');
     }
 
     private function hasKey(string $path, string $key): bool
@@ -87,5 +94,16 @@ class FileWriter
         }
 
         return $isset;
+    }
+
+    /**
+     * Split key into 2 parts. The first part will be the filename
+     *
+     * @param string $key
+     * @return array
+     */
+    private function parseKey(string $key): array
+    {
+        return preg_split('/\./', $key, 2);
     }
 }

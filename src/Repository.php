@@ -37,24 +37,12 @@ class Repository extends RepositoryBase
      */
     public function write(string $key, $value): bool
     {
-        list($filename, $item) = $this->parseKey($key);
-        $result = $this->writer->write($item, $value, $filename);
+        $result = $this->writer->write($key, $value);
 
         if(!$result) throw new Exception('File could not be written to');
 
         $this->set($key, $value);
 
         return $result;
-    }
-
-    /**
-     * Split key into 2 parts. The first part will be the filename
-     * 
-     * @param string $key
-     * @return array
-     */
-    private function parseKey(string $key): array
-    {
-        return preg_split('/\./', $key, 2);
     }
 }
