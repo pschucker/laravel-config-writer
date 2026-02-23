@@ -1,3 +1,0 @@
-plugins {
-    id "de.ecomsol.gradle.plugins.settings.java" version "2.3.0"
-}
